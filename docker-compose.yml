@@ -1,0 +1,60 @@
+version: '3'
+services:
+  app01:
+    build: ./docker
+    container_name: isucon7-app01
+    restart: always
+    stdin_open: true
+    volumes:
+      - .:/home/isucon/isubata
+    ports:
+      - 3000
+  app02:
+    build: ./docker
+    container_name: isucon7-app02
+    restart: always
+    stdin_open: true
+    volumes:
+      - .:/home/isucon/isubata
+    ports:
+      - 3000
+  app03:
+    build: ./docker
+    container_name: isucon7-app03
+    restart: always
+    stdin_open: true
+    volumes:
+      - .:/home/isucon/isubata
+    ports:
+      - 3000
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+    links:
+      - mysql
+    # command: sh /home/isucon/isubata/docker/mysql/setup.sh
+  bench:
+    build: ./docker
+    container_name: isucon7-bench
+    restart: always
+    stdin_open: true
+    volumes:
+      - .:/home/isucon/isubata
+    ports:
+      - 3000
+  mysql:
+    image: mysql:5.7
+    container_name: isucon7-mysql
+    environment:
+      - MYSQL_ALLOW_EMPTY_PASSWORD=yes
+  nginx:
+    image: nginx
+    container_name: isucon7-nginx
+    restart: always
+    volumes:
+      - ${PWD}/docker/nginx.conf:/etc/nginx/nginx.conf
+    ports:
+      - 80:80
+    links:
+      - app01
+      - app02
