@@ -57,7 +57,7 @@ services:
       - MYSQL_PWD=root
     command: sudo mysqld_safe --port=3306
   bench:
-    build: ./docker/db
+    build: ./docker
     container_name: isucon7-bench
     restart: always
     stdin_open: true
