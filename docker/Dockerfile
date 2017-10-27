@@ -46,4 +46,8 @@ RUN /tmp/isubata/bench/bin/gen-initial-dataset
 
 RUN sudo apt-get install -y nginx mysql-client vim
 
+RUN sudo touch /var/log/nginx/error.log
+RUN sudo chown isucon:isucon /var/log/nginx/error.log
+RUN sudo chmod 777 /var/log/nginx/error.log
+
 WORKDIR /home/isucon/isubata

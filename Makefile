@@ -3,6 +3,8 @@ DOCKER_COMPOSE := docker-compose -f ./docker-compose.yml
 DOCKER_EXEC := $(DOCKER) exec -it
 
 CONTAINER_FOR_DB_SETUP := isucon7-app03
+CONTAINER_FOR_APP01_SETUP := isucon7-app01
+CONTAINER_FOR_APP02_SETUP := isucon7-app02
 DB_HOST := localhost
 DB_USER := root
 
@@ -13,8 +15,18 @@ up:
 	$(DOCKER_COMPOSE) up -d
 	@echo 'Waiting for mysql to start up...'
 	@sh -c 'until ($(DOCKER_EXEC) $(CONTAINER_FOR_DB_SETUP) mysqladmin ping -h$(DB_HOST) -u$(DB_USER)) do sleep 1; done' > /dev/null
-	$(DOCKER_EXEC) $(CONTAINER_FOR_DB_SETUP) sh -x /home/isucon/isubata/docker/setup.sh
+	$(DOCKER_EXEC) $(CONTAINER_FOR_DB_SETUP) sh -x /home/isucon/isubata/docker/setup_mysql.sh
+	$(DOCKER_EXEC) $(CONTAINER_FOR_APP01_SETUP) sh -x /home/isucon/isubata/docker/setup_nginx.sh
+	$(DOCKER_EXEC) $(CONTAINER_FOR_APP02_SETUP) sh -x /home/isucon/isubata/docker/setup_nginx.sh
 
+app/start:
+	$(MAKE) -j app/start/app01 app/start/app02
+
+app/start/app01:
+	$(DOCKER_EXEC) $(CONTAINER_FOR_APP01_SETUP) sh -x /home/isucon/isubata/docker/setup_app.sh
+
+app/start/app02:
+	$(DOCKER_EXEC) $(CONTAINER_FOR_APP02_SETUP) sh -x /home/isucon/isubata/docker/setup_app.sh
 
 clean: stop rmi
 
