@@ -2,8 +2,8 @@ DOCKER=$(shell which docker)
 DOCKER_COMPOSE := docker-compose -f ./docker-compose.yml
 DOCKER_EXEC := $(DOCKER) exec -it
 
-CONTAINER_FOR_DB_SETUP := isucon7-app02
-DB_HOST := mysql
+CONTAINER_FOR_DB_SETUP := isucon7-app03
+DB_HOST := localhost
 DB_USER := root
 
 ps:
@@ -28,6 +28,9 @@ rmi:
 	$(eval IMAGES := $(shell $(DOCKER_COMPOSE) images -s))
 	echo $(IMAGES)
 	# $(DOCKER) rmi -f $(IMAGES)
+
+logs/%:
+	$(DOCKER_COMPOSE) logs $*
 
 images:
 	$(DOCKER_COMPOSE) images

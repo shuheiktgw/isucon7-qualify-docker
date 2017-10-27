@@ -46,8 +46,18 @@ RUN /tmp/isubata/bench/bin/gen-initial-dataset
 
 RUN sudo apt-get install -y mysql-client vim
 
-# ===== db =====
+# ===== app =====
 
-RUN sudo apt-get install -y mysql-server
+RUN sudo sh -c 'echo "mysql-server-5.7 mysql-server/root_password password root" | debconf-set-selections'
+RUN sudo sh -c 'echo "mysql-server-5.7 mysql-server/root_password_again password root" | debconf-set-selections'
+RUN sudo apt-get install -y mysql-server-5.7
+
 
 WORKDIR /home/isucon/isubata
+
+RUN sudo mkdir -p /var/run/mysqld
+RUN sudo chown mysql:mysql /var/run/mysqld
+
+VOLUME ./docker/mysqld.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
+
+# ENTRYPOINT ["sudo mysqld_safe"]

@@ -44,6 +44,6 @@ RUN make
 
 RUN /tmp/isubata/bench/bin/gen-initial-dataset
 
-RUN sudo apt-get install -y mysql-client vim
+RUN sudo apt-get install -y nginx mysql-client vim
 
 WORKDIR /home/isucon/isubata
