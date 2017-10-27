@@ -9,6 +9,13 @@ services:
       - .:/home/isucon/isubata
     ports:
       - 3000
+    environment:
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=root
+    depends_on:
+      - mysql
+    links:
+      - mysql
   app02:
     build: ./docker
     container_name: isucon7-app02
@@ -18,21 +25,13 @@ services:
       - .:/home/isucon/isubata
     ports:
       - 3000
-  app03:
-    build: ./docker
-    container_name: isucon7-app03
-    restart: always
-    stdin_open: true
-    volumes:
-      - .:/home/isucon/isubata
-    ports:
-      - 3000
     environment:
       - MYSQL_HOST=mysql
       - MYSQL_USER=root
+    depends_on:
+      - mysql
     links:
       - mysql
-    # command: sh /home/isucon/isubata/docker/mysql/setup.sh
   bench:
     build: ./docker/db
     container_name: isucon7-bench
@@ -52,8 +51,8 @@ services:
     container_name: isucon7-nginx01
     restart: always
     volumes:
-      - ./files/app/nginx.conf:/etc/nginx/nginx.01.conf
-      - ./files/app/nginx.php.conf:/etc/nginx/nginx.01.php.conf
+      - ./files/app/nginx.01.conf:/etc/nginx/nginx.conf
+      - ./files/app/nginx.01.php.conf:/etc/nginx/nginx.php.conf
     ports:
       - 8081:80
     links:
@@ -63,8 +62,8 @@ services:
     container_name: isucon7-nginx02
     restart: always
     volumes:
-      - ./files/app/nginx.conf:/etc/nginx/nginx.02.conf
-      - ./files/app/nginx.php.conf:/etc/nginx/nginx.02.php.conf
+      - ./files/app/nginx.02.conf:/etc/nginx/nginx.conf
+      - ./files/app/nginx.02.php.conf:/etc/nginx/nginx.php.conf
     ports:
       - 8082:80
     links:
