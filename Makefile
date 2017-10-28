@@ -5,6 +5,8 @@ DOCKER_EXEC := $(DOCKER) exec -it
 CONTAINER_FOR_APP01_SETUP := isucon7-app01
 CONTAINER_FOR_APP02_SETUP := isucon7-app02
 CONTAINER_FOR_DB_SETUP := isucon7-app03
+CONTAINER_BENCH := isucon7-bench
+
 DB_HOST := localhost
 DB_USER := root
 
@@ -25,6 +27,11 @@ app/start/app01:
 
 app/start/app02:
 	$(DOCKER_EXEC) $(CONTAINER_FOR_APP02_SETUP) sh -x /home/isucon/isubata/docker/setup_app.sh
+
+BENCH_TARGET_HOSTS := app01,app02
+bench/start:
+	$(DOCKER_EXEC) $(CONTAINER_BENCH) sh -c 'cd /tmp/isubata/bench && ./bin/bench -remotes=$(BENCH_TARGET_HOSTS) -output result.json'
+
 
 clean: stop rm
 
