@@ -23,10 +23,10 @@ app/start:
 	$(MAKE) -j app/start/app01 app/start/app02
 
 app/start/app01:
-	$(DOCKER_EXEC) $(CONTAINER_FOR_APP01_SETUP) sh -x /home/isucon/isubata/docker/setup_app.sh
+	$(DOCKER_EXEC) $(CONTAINER_FOR_APP01_SETUP) sh -x /home/isucon/isubata/docker/app/setup.sh
 
 app/start/app02:
-	$(DOCKER_EXEC) $(CONTAINER_FOR_APP02_SETUP) sh -x /home/isucon/isubata/docker/setup_app.sh
+	$(DOCKER_EXEC) $(CONTAINER_FOR_APP02_SETUP) sh -x /home/isucon/isubata/docker/app/setup.sh
 
 BENCH_TARGET_HOSTS := app01,app02
 bench/start:

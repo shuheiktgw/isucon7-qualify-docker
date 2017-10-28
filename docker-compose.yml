@@ -1,7 +1,8 @@
 version: '3'
 services:
   app01:
-    build: ./docker/app
+    image: atgrandpa/isucon7-qualify-docker:app
+    # build: ./docker/app
     container_name: isucon7-app01
     stdin_open: true
     privileged: true
@@ -14,7 +15,8 @@ services:
     links:
       - app03
   app02:
-    build: ./docker/app
+    image: atgrandpa/isucon7-qualify-docker:app
+    # build: ./docker/app
     container_name: isucon7-app02
     stdin_open: true
     privileged: true
@@ -27,18 +29,20 @@ services:
     links:
       - app03
   app03:
-    build: ./docker/db
+    image: atgrandpa/isucon7-qualify-docker:db
+    # build: ./docker/db
     container_name: isucon7-app03
     restart: always
     stdin_open: true
     privileged: true
     volumes:
       - .:/home/isucon/isubata
-      - ./docker/mysqld.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
+      - ./docker/db/mysqld.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
     ports:
       - 3306
   bench:
-    build: ./docker/app
+    image: atgrandpa/isucon7-qualify-docker:app
+    # build: ./docker/app
     container_name: isucon7-bench
     restart: always
     stdin_open: true
