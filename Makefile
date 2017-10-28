@@ -13,11 +13,9 @@ ps:
 
 up:
 	$(DOCKER_COMPOSE) up -d
-	@echo 'Waiting for mysql to start up...'
-	@sh -c 'until ($(DOCKER_EXEC) $(CONTAINER_FOR_DB_SETUP) mysqladmin ping -h$(DB_HOST) -u$(DB_USER)) do sleep 1; done' > /dev/null
-	$(DOCKER_EXEC) $(CONTAINER_FOR_DB_SETUP) sh -x /home/isucon/isubata/docker/setup_mysql.sh
-	$(DOCKER_EXEC) $(CONTAINER_FOR_APP01_SETUP) sh -x /home/isucon/isubata/docker/setup_nginx.sh
-	$(DOCKER_EXEC) $(CONTAINER_FOR_APP02_SETUP) sh -x /home/isucon/isubata/docker/setup_nginx.sh
+	$(DOCKER_EXEC) $(CONTAINER_FOR_APP01_SETUP) sudo /etc/init.d/nginx start
+	$(DOCKER_EXEC) $(CONTAINER_FOR_APP02_SETUP) sudo /etc/init.d/nginx start
+	$(DOCKER_EXEC) $(CONTAINER_FOR_DB_SETUP) sudo /etc/init.d/mysql start
 
 app/start:
 	$(MAKE) -j app/start/app01 app/start/app02
