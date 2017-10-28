@@ -48,5 +48,3 @@ services:
     stdin_open: true
     volumes:
       - .:/home/isucon/isubata
-    ports:
-      - 3000
