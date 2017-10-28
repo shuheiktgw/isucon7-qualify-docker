@@ -32,6 +32,10 @@ BENCH_TARGET_HOSTS := app01,app02
 bench/start:
 	$(DOCKER_EXEC) $(CONTAINER_BENCH) sh -c 'cd /tmp/isubata/bench && ./bin/bench -remotes=$(BENCH_TARGET_HOSTS) -output result.json'
 
+JQ_QUERY := .
+bench/result:
+	$(DOCKER_EXEC) $(CONTAINER_BENCH) sh -c 'jq $(JQ_QUERY) < /tmp/isubata/bench/result.json'
+
 
 clean: stop rm
 

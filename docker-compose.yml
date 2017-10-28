@@ -4,6 +4,7 @@ services:
     build: ./docker/app
     container_name: isucon7-app01
     stdin_open: true
+    privileged: true
     volumes:
       - .:/home/isucon/isubata
     ports:
@@ -16,6 +17,7 @@ services:
     build: ./docker/app
     container_name: isucon7-app02
     stdin_open: true
+    privileged: true
     volumes:
       - .:/home/isucon/isubata
     ports:
@@ -27,9 +29,12 @@ services:
   app03:
     build: ./docker/db
     container_name: isucon7-app03
+    restart: always
     stdin_open: true
+    privileged: true
     volumes:
       - .:/home/isucon/isubata
+      - ./docker/mysqld.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
     ports:
       - 3306
   bench:
