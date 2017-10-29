@@ -1,165 +1,119 @@
-ISUCON7 予選問題
+ISUCON7 予選問題 on Docker
+
+[ISUCON7 予選問題](https://github.com/isucon/isucon7-qualify) の環境をDocker上で動かします
+
 ====
 
-[予選マニュアル](https://gist.github.com/941/8c64842b71995a2d448315e2594f62c2)
+## 構成
 
-## 感想戦用、1VMでの動かし方
+複数台構成で、以下のコンテナが立ち上がります。
 
-### ディレクトリ構成
+|service名|役割|
+|:---:|:---|
+|app01|webサーバー|
+|app02|webサーバー|
+|app03|dbサーバー|
+|bench|benchサーバー|
 
-```sh
-db      - データベーススキーマ等
-bench   - ベンチマーカー、初期データ生成器
-webapp  - 各種言語実装
-files   - 各種設定ファイル
-```
+app01, app02からapp03のmysqlに接続しています。
 
-### 環境構築
-
-Ubuntu 16.04 のものをなるべくデフォルトで使います。
-
-まずは `isucon` ユーザーを作り、そのホームディレクトリ配下の `isubata` ディレクトリに
-リポジトリをチェックアウトします。
-
-```console
-$ sudo apt install git
-$ git clone https://github.com/isucon/isucon7-qualify.git isubata
-```
-
-nginx と MySQL は Ubuntu の標準のものを使います。
+## ベンチマークを動かすまで
 
 ```
-$ sudo apt install mysql-server nginx
+$ git clone https://github.com/at-grandpa/isucon7-qualify-docker.git
+$ cd isucon7-qualify-docker.git
 ```
 
-各言語は xbuild で最新安定版をインストールします。まず xbuild が必要とするライブラリをインストールします。
+操作方法は `make` もしくは `make help` で参照できます。
 
 ```
-$ sudo apt install -y git curl libreadline-dev pkg-config autoconf automake build-essential libmysqlclient-dev \
-	libssl-dev python3 python3-dev python3-venv openjdk-8-jdk-headless libxml2-dev libcurl4-openssl-dev \
-        libxslt1-dev re2c bison libbz2-dev libreadline-dev libssl-dev gettext libgettextpo-dev libicu-dev \
-	libmhash-dev libmcrypt-dev libgd-dev libtidy-dev
-```
+$ make
 
-xbuildで言語をインストールします。ベンチマーカーのために、Goは必ずインストールしてください。
-他の言語は使わないのであればスキップしても問題ないと思います。
+  isucon7-qualify-docker
 
-```
-cd
-git clone https://github.com/tagomoris/xbuild.git
-
-mkdir local
-xbuild/ruby-install   -f 2.4.2   /home/isucon/local/ruby
-xbuild/perl-install   -f 5.26.1  /home/isucon/local/perl
-xbuild/node-install   -f v6.11.4 /home/isucon/local/node
-xbuild/go-install     -f 1.9     /home/isucon/local/go
-xbuild/python-install -f 3.6.2   /home/isucon/local/python
-xbuild/php-install    -f 7.1.9   /home/isucon/local/php -- --disable-phar --with-pcre-regex --with-zlib --enable-fpm --enable-pdo --with-mysqli=mysqlnd --with-pdo-mysql=mysqlnd --with-openssl --with-pcre-regex --with-pcre-dir --with-libxml-dir --enable-opcache --enable-bcmath --with-bz2 --enable-calendar --enable-cli --enable-shmop --enable-sysvsem --enable-sysvshm --enable-sysvmsg --enable-mbregex --enable-mbstring --with-mcrypt --enable-pcntl --enable-sockets --with-curl --enable-zip --with-pearAA
-```
-
-### ベンチマーカーの準備
-
-Goを使うのでこれだけは最初に環境変数を設定しておく
-
-```
-export PATH=$HOME/local/go/bin:$HOME/go/bin:$PATH
-```
-
-ビルド
-
-```sh
-go get github.com/constabulary/gb/...   # 初回のみ
-cd ~/isubata/bench
-gb vendor restore
-make
-```
-
-初期データ生成
-
-```sh
-cd ~/isubata/bench
-./bin/gen-initial-dataset   #isucon7q-initial-dataset.sql.gz ができる
-```
-
-### データベース初期化
-
-データベース初期化、アプリが動くのに最低限必要なデータ投入
-
-```sh
-$ sudo ./db/init.sh
-$ sudo mysql
-mysql> CREATE USER isucon@'%' IDENTIFIED BY 'isucon';
-mysql> GRANT ALL on *.* TO isucon@'%';
-mysql> CREATE USER isucon@'localhost' IDENTIFIED BY 'isucon';
-mysql> GRANT ALL on *.* TO isucon@'localhost';
-```
-
-初期データ投入
-
-```sh
-zcat ~/isubata/bench/isucon7q-initial-dataset.sql.gz | sudo mysql --default-character-set=utf8 isubata
-```
-
-デフォルトだとTCPが127.0.0.1しかbindしてないので、複数台構成に対応するには
-`/etc/mysql/mysql.conf.d/mysqld.cnf` で `bind-address = 127.0.0.1` になっている
-場所を `bind-address = 0.0.0.0` に書き換える。
-
-
-### nginx
-
-```sh
-$ sudo cp ~/isubata/files/app/nginx.* /etc/nginx/sites-available
-$ cd /etc/nginx/sites-enabled
-$ sudo unlink default
-$ sudo ln -s ../sites-available/nginx.conf  # php の場合は nginx.php.conf
-$ sudo systemctl restart nginx
-```
-
-
-### 参考実装(python)を動かす
-
-初回のみ
-
-```console
-$ cd ~/isubata/webapp/python
-$ ./setup.sh
-```
-
-起動
-
-```sh
-export ISUBATA_DB_HOST=127.0.0.1
-export ISUBATA_DB_USER=isucon
-export ISUBATA_DB_PASSWORD=isucon
-./venv/bin/gunicorn --workers=10 -b '127.0.0.1:5000' app:app
-```
-
-予選本番では、 `/etc/hosts` に各ホスト名を書いて、環境変数は systemd から `env.sh` ファイルを読み込んでいました。
-この辺は適当に使いやすいように設定してください。
-
-
-### ベンチマーク実行
-
-```console
-$ cd bench
-$ ./bin/bench -h # ヘルプ確認
-$ ./bin/bench -remotes=127.0.0.1 -output result.json
-```
-
-結果を見るには `sudo apt install jq` で jq をインストールしてから、
+  up                     buildからup、nginxとmysqlの起動までを全て行う
+  stop                   コンテナを停止する
+  rm                     コンテナを削除する
+  clean                  コンテナを停止し削除する
+  ps                     コンテナの一覧と状態を表示する
+  logs/%                 '%'にapp01/app02/app03/benchを指定すると、指定されたコンテナの直近のlogを表示する
+  attach/%               '%'にapp01/app02/app03/benchを指定すると、指定されたコンテナにattachする
+  nginx/start            全Webサーバーのnginxを起動する
+  nginx/start/%          '%'にapp01/app02を指定すると、指定されたWebサーバーでnginxを起動する
+  nginx/restart          全Webサーバーのnginxを再起動する
+  nginx/restart/%        '%'にapp01/app02を指定すると、指定されたWebサーバーでnginxを再起動する
+  nginx/stop             全Webサーバーのnginxを停止する
+  nginx/stop/%           '%'にapp01/app02を指定すると、指定されたWebサーバーでnginxを停止する
+  nginx/status           全Webサーバーのnginxのstatusを表示する
+  nginx/status/%         '%'にapp01/app02を指定すると、指定されたWebサーバーでnginxのstatusを見る
+  mysql/start            app03でmysqlを起動する
+  mysql/restart          app03でmysqlを再起動する
+  mysql/stop             app03でmysqlを停止する
+  mysql/status           app03でmysqlのstatusを見る
+  app/start/python       全Webサーバーでpythonのwebappが起動する
+  app/start/python/%     '%'にapp01/app02を指定すると、指定されたWebサーバーでpythonのwebappが起動する
+  app/start/go           全Webサーバーでgoのwebappが起動する
+  app/start/go/%         '%'にapp01/app02を指定すると、指定されたWebサーバーでgoのwebappが起動する
+  bench/start            BENCH_TARGET_HOSTSで指定したhostに対してベンチマークを走らせる  ex) $ make bench/start BENCH_TARGET_HOSTS=app01,app02
+  bench/result           直近のベンチマークの result.json を jq コマンドで見る
+  bench/score            直近のベンチマークのスコアを見る
 
 ```
-$ jq . < result.json
+
+ベンチマークを回すまでの手順は以下です。
+
+まず、
+
+```
+$ make up
 ```
 
-### 備考
+で、imageのpullとupが行われます。次に、goのwebサーバーを立ち上げます。
 
-systemd に置く設定ファイルなどは files/ ディレクトリから探してください。
+```
+$ make app/start/go
+```
 
+これで、app01サーバーとapp02サーバーでgoのアプリケーションが起動します。ブラウザで確認するには、下記にアクセスしてください。
 
-### 使用データの取得元
+```
+[app01] http://0.0.0.0:8081/
+[app02] http://0.0.0.0:8082/
+```
 
-- 青空文庫 http://www.aozora.gr.jp/
-- なんちゃって個人情報 http://kazina.com/dummy/
-- いらすとや http://www.irasutoya.com/
-- pixabay https://pixabay.com/
+アプリケーションが動作していることが確認できます。ベンチマークをかけるには、アプリケーションが動作している状態で以下を実行してください。
+
+```
+$ make bench/start BENCH_TARGET_HOSTS=app01,app02
+```
+
+`BENCH_TARGET_HOSTS=app01`とすれば、app01に向けてだけベンチマークを走らせます。ベンチマーク結果は下記で確認できます。
+
+```
+$ make bench/result
+```
+
+スコアのみを見たい時は、以下を実行してください。
+
+```
+$ make bench/score
+recent benchmark score:
+3843
+$
+```
+
+## チューニングの仕方
+
+* cloneした後に`git remote`でご自身のリポジトリにpushして進めてください
+* リポジトリrootと、各コンテナの `/home/isucon/isubata` ディレクトリがマウントされています
+* ローカルでコードを編集し、コンテナ内でビルドし、アプリケーションを実行してください
+* コンテナ内に入るには `make attach/app01` など、`make attach/{service名}` でログインできます
+* プロビジョニングに必要な操作は `docker/app/Dockerfile`や`docker/db/Dockerfile`に記述して、imageをbuildし直してください
+
+## 参考
+
+[ISUCON7 予選問題](https://github.com/isucon/isucon7-qualify) を参考にさせていただきました。
+
+## コントリビュート
+
+PRやISSUE等、お待ちしています。

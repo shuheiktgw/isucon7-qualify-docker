@@ -1,8 +1,7 @@
 version: '3'
 services:
   app01:
-    image: atgrandpa/isucon7-qualify-docker:app
-    # build: ./docker/app
+    build: ./docker/app
     container_name: isucon7-app01
     stdin_open: true
     privileged: true
@@ -15,8 +14,7 @@ services:
     links:
       - app03
   app02:
-    image: atgrandpa/isucon7-qualify-docker:app
-    # build: ./docker/app
+    build: ./docker/app
     container_name: isucon7-app02
     stdin_open: true
     privileged: true
@@ -29,8 +27,7 @@ services:
     links:
       - app03
   app03:
-    image: atgrandpa/isucon7-qualify-docker:db
-    # build: ./docker/db
+    build: ./docker/db
     container_name: isucon7-app03
     restart: always
     stdin_open: true
@@ -41,8 +38,7 @@ services:
     ports:
       - 3306
   bench:
-    image: atgrandpa/isucon7-qualify-docker:app
-    # build: ./docker/app
+    build: ./docker/app
     container_name: isucon7-bench
     restart: always
     stdin_open: true
