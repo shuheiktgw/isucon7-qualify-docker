@@ -1,4 +1,4 @@
-version: '3'
+version: '2'
 services:
   app01:
     build: ./docker/app
@@ -13,6 +13,8 @@ services:
       - app03
     links:
       - app03
+    cpuset: '1'
+    mem_limit: 1G
   app02:
     build: ./docker/app
     container_name: isucon7-app02
@@ -26,6 +28,8 @@ services:
       - app03
     links:
       - app03
+    cpuset: '2'
+    mem_limit: 1G
   app03:
     build: ./docker/db
     container_name: isucon7-app03
@@ -37,6 +41,8 @@ services:
       - ./docker/db/mysqld.cnf:/etc/mysql/mysql.conf.d/mysqld.cnf
     ports:
       - 3306
+    cpuset: '3'
+    mem_limit: 1G
   bench:
     build: ./docker/app
     container_name: isucon7-bench
