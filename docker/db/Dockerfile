@@ -1,0 +1,1 @@
+FROM atgrandpa/isucon7-qualify-docker:db
