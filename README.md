@@ -116,6 +116,11 @@ $ make bench/score
 * コンテナ内に入るには `make attach/app01` など、`make attach/{service名}` でログインできます
 * `docker/app/Dockerfile`や`docker/db/Dockerfile`も適宜変更してください
 
+## TODO
+
+- [ ] トラフィック制限
+- [ ] 全言語の動作確認
+
 ## 参考
 
 [ISUCON7 予選問題](https://github.com/isucon/isucon7-qualify) を参考にさせていただきました。
