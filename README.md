@@ -1,15 +1,15 @@
-ISUCON7 予選問題 on Docker
+# ISUCON7 予選問題 on Docker
 
 [ISUCON7 予選問題](https://github.com/isucon/isucon7-qualify) の環境をDocker上で動かします
 
-====
+---
 
 ## 構成
 
 複数台構成で、以下のコンテナが立ち上がります。
 
 |service名|役割|
-|:---:|:---|
+|:---:|:---:|
 |app01|webサーバー|
 |app02|webサーバー|
 |app03|dbサーバー|
@@ -17,7 +17,11 @@ ISUCON7 予選問題 on Docker
 
 app01, app02からapp03のmysqlに接続しています。
 
+app0X系は、メモリ1GB、CPUは1コアという制限をしています。
+
 ## ベンチマークを動かすまで
+
+始めにcloneでリポジトリをダウンロードします。
 
 ```
 $ git clone https://github.com/at-grandpa/isucon7-qualify-docker.git
@@ -30,6 +34,8 @@ $ cd isucon7-qualify-docker.git
 $ make
 
   isucon7-qualify-docker
+
+  see: https://github.com/at-grandpa/isucon7-qualify-docker
 
   up                     buildからup、nginxとmysqlの起動までを全て行う
   stop                   コンテナを停止する
@@ -62,32 +68,36 @@ $ make
 
 ベンチマークを回すまでの手順は以下です。
 
-まず、
+まず、imageのpullとupが行います。
 
 ```
 $ make up
 ```
 
-で、imageのpullとupが行われます。次に、goのwebサーバーを立ち上げます。
+次に、（今回は）goのwebサーバーを立ち上げます。
 
 ```
 $ make app/start/go
 ```
 
-これで、app01サーバーとapp02サーバーでgoのアプリケーションが起動します。ブラウザで確認するには、下記にアクセスしてください。
+これで、app01とapp02でgoのアプリケーションが起動します。
+
+ブラウザで確認するには、下記にアクセスしてください。
 
 ```
 [app01] http://0.0.0.0:8081/
 [app02] http://0.0.0.0:8082/
 ```
 
-アプリケーションが動作していることが確認できます。ベンチマークをかけるには、アプリケーションが動作している状態で以下を実行してください。
+ベンチマークをかけるには、アプリケーションが動作している状態で以下を実行してください。
 
 ```
 $ make bench/start BENCH_TARGET_HOSTS=app01,app02
 ```
 
-`BENCH_TARGET_HOSTS=app01`とすれば、app01に向けてだけベンチマークを走らせます。ベンチマーク結果は下記で確認できます。
+`BENCH_TARGET_HOSTS=app01`とすれば、app01にだけベンチマークを走らせます。
+
+ベンチマーク結果は下記で確認できます。
 
 ```
 $ make bench/result
@@ -97,18 +107,16 @@ $ make bench/result
 
 ```
 $ make bench/score
-recent benchmark score:
-3843
-$
 ```
 
 ## チューニングの仕方
 
-* cloneした後に`git remote`でご自身のリポジトリにpushして進めてください
+* cloneした後に`git remote`で、リモートを自分のリポジトリに変更してください
 * リポジトリrootと、各コンテナの `/home/isucon/isubata` ディレクトリがマウントされています
-* ローカルでコードを編集し、コンテナ内でビルドし、アプリケーションを実行してください
+* ローカルの`webapp/`以下のコードを編集しチューニングを行います
+* コンテナ内でビルドし、アプリケーションを実行してください
 * コンテナ内に入るには `make attach/app01` など、`make attach/{service名}` でログインできます
-* プロビジョニングに必要な操作は `docker/app/Dockerfile`や`docker/db/Dockerfile`に記述して、imageをbuildし直してください
+* `docker/app/Dockerfile`や`docker/db/Dockerfile`も適宜変更してください
 
 ## 参考
 
@@ -116,4 +124,4 @@ $
 
 ## コントリビュート
 
-PRやISSUE等、お待ちしています。
+気になる点などありましたら、PRやISSUE等お待ちしています。お気軽にどうぞ。
