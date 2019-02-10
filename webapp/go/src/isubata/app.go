@@ -28,6 +28,7 @@ import (
 
 const (
 	avatarMaxBytes = 1 * 1024 * 1024
+  	dir = "/home/isucon/isubata/webapp/public/icons/"
 )
 
 var (
@@ -82,6 +83,8 @@ func init() {
 	db.SetMaxOpenConns(20)
 	db.SetConnMaxLifetime(5 * time.Minute)
 	log.Printf("Succeeded to connect db.")
+
+	initIcon()
 }
 
 type User struct {
@@ -707,6 +710,46 @@ func getIcon(c echo.Context) error {
 		return echo.ErrNotFound
 	}
 	return c.Blob(http.StatusOK, mime, data)
+}
+
+func initIcon() {
+	type Image struct {
+		Name string `db:"name"`
+		Data []byte `db:"data"`
+	}
+	imgs := []Image{}
+	log.Println("Start loading images from MySQL")
+
+	err := db.Select(&imgs, "select name, data from image")
+	if err != nil {
+		log.Printf("Error occurred while selecting images: %s\n", err)
+	}
+
+	log.Printf("Loaded %d images\n", len(imgs))
+
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		os.Mkdir(dir, 0777)
+	}
+
+	for _, img := range imgs {
+		path := dir + img.Name
+		file, err := os.Create(path)
+		if err != nil {
+			log.Printf("Error occurred while creating file: %s\n", err)
+			file.Close()
+			continue
+		}
+
+		if _, err := file.Write(img.Data); err != nil {
+			log.Printf("Error occurred while writing data file: %s\n", err)
+			file.Close()
+			continue
+		}
+
+		file.Close()
+	}
+
+	log.Println("Saved images")
 }
 
 func tAdd(a, b int64) int64 {
