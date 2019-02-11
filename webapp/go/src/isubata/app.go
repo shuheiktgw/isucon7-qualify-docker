@@ -116,6 +116,16 @@ func addMessage(channelID, userID int64, content string) (int64, error) {
 	if err != nil {
 		return 0, err
 	}
+
+	var messageCount int
+	if err := db.Get(&messageCount, "SELECT message_count FROM channel WHERE id = ?", channelID); err != nil {
+		return 0, err
+	}
+
+	if _, err = db.Exec("UPDATE channel SET message_count = ? WHERE id = ?", messageCount + 1, channelID); err != nil {
+		return 0, err
+	}
+
 	return res.LastInsertId()
 }
 
