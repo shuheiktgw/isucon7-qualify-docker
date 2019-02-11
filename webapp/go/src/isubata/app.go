@@ -85,6 +85,7 @@ func init() {
 	log.Printf("Succeeded to connect db.")
 
 	initIcon()
+	initMessageCount()
 }
 
 type User struct {
@@ -230,6 +231,7 @@ type ChannelInfo struct {
 	ID          int64     `db:"id"`
 	Name        string    `db:"name"`
 	Description string    `db:"description"`
+	MessageCount int    `db:"message_count"`
 	UpdatedAt   time.Time `db:"updated_at"`
 	CreatedAt   time.Time `db:"created_at"`
 }
@@ -764,6 +766,30 @@ func initIcon() {
 	}
 
 	log.Println("Saved images")
+}
+
+func initMessageCount() {
+	type MessageCount struct {
+		ChannelId int `db:"channel_id"`
+		Cnt int `db:"cnt"`
+	}
+
+	counts := []MessageCount{}
+	log.Println("Start loading message counts from MySQL")
+
+	err := db.Select(&counts, "select channel_id, count(*) as cnt from message group by channel_id")
+	if err != nil {
+		log.Printf("Error occurred while selecting message counts: %s\n", err)
+	}
+
+	for _, mc := range counts {
+		_, err = db.Exec("UPDATE channel SET message_count = ? WHERE id = ?", mc.Cnt, mc.ChannelId)
+		if err != nil {
+			log.Printf("Error occurred while setting message counts: %s\n", err)
+		}
+	}
+
+	log.Println("Saved message counts")
 }
 
 func tAdd(a, b int64) int64 {
