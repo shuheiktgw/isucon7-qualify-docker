@@ -214,7 +214,7 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM image WHERE id > 1001")
 	db.MustExec("DELETE FROM channel WHERE id > 10")
 	db.MustExec("DELETE FROM message WHERE id > 10000")
-	db.MustExec("DELETE FROM haveread")
+	db.MustExec("DELETE FROM read_count")
 
 	// Set message_count
 	type row struct {
@@ -425,44 +425,21 @@ func getMessage(c echo.Context) error {
 		response = append(response, r)
 	}
 
-	if len(messages) > 0 {
-		_, err := db.Exec("INSERT INTO haveread (user_id, channel_id, message_id, updated_at, created_at)"+
-			" VALUES (?, ?, ?, NOW(), NOW())"+
-			" ON DUPLICATE KEY UPDATE message_id = ?, updated_at = NOW()",
-			userID, chanID, messages[0].ID, messages[0].ID)
-		if err != nil {
-			return err
-		}
+	var count int64
+	err = db.Get(&count, "SELECT message_count FROM channel WHERE id = ?", chanID)
+	if err != nil {
+		return err
+	}
+
+	_, err = db.Exec("INSERT INTO read_count (channel_id, user_id, count)"+
+		" VALUES (?, ?, ?)"+
+		" ON DUPLICATE KEY UPDATE count = ?",
+		chanID, userID, count, count)
+	if err != nil {
+		return err
 	}
 
 	return c.JSON(http.StatusOK, response)
-}
-
-func queryChannels() ([]int64, error) {
-	res := []int64{}
-	err := db.Select(&res, "SELECT id FROM channel")
-	return res, err
-}
-
-func queryHaveRead(userID, chID int64) (int64, error) {
-	type HaveRead struct {
-		UserID    int64     `db:"user_id"`
-		ChannelID int64     `db:"channel_id"`
-		MessageID int64     `db:"message_id"`
-		UpdatedAt time.Time `db:"updated_at"`
-		CreatedAt time.Time `db:"created_at"`
-	}
-	h := HaveRead{}
-
-	err := db.Get(&h, "SELECT * FROM haveread WHERE user_id = ? AND channel_id = ?",
-		userID, chID)
-
-	if err == sql.ErrNoRows {
-		return 0, nil
-	} else if err != nil {
-		return 0, err
-	}
-	return h.MessageID, nil
 }
 
 func fetchUnread(c echo.Context) error {
@@ -473,35 +450,41 @@ func fetchUnread(c echo.Context) error {
 
 	time.Sleep(time.Second)
 
-	channels, err := queryChannels()
-	if err != nil {
+	type Channel struct {
+		Id int64 `db:"id"`
+		MessageCount int64 `db:"message_count"`
+	}
+
+	var channels []Channel
+	if err := db.Select(&channels, "SELECT id, message_count FROM channel WHERE message_count > 0"); err != nil {
+		return err
+	}
+
+	type ReadCount struct {
+		ChannelId int64 `db:"channel_id"`
+		UserId int64 `db:"user_id"`
+		Count int64 `db:"count"`
+	}
+
+	var readCounts []ReadCount
+	if err := db.Select(&readCounts, "SELECT channel_id, user_id, count FROM read_count WHERE user_id = ?", userID); err != nil {
 		return err
 	}
 
 	resp := []map[string]interface{}{}
+	for _, c := range channels {
+		total := c.MessageCount
 
-	for _, chID := range channels {
-		lastID, err := queryHaveRead(userID, chID)
-		if err != nil {
-			return err
+		for _, rc := range readCounts {
+			if rc.ChannelId == c.Id {
+				total = total - rc.Count
+			}
 		}
 
-		var cnt int64
-		if lastID > 0 {
-			err = db.Get(&cnt,
-				"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ? AND ? < id",
-				chID, lastID)
-		} else {
-			err = db.Get(&cnt,
-				"SELECT COUNT(*) as cnt FROM message WHERE channel_id = ?",
-				chID)
-		}
-		if err != nil {
-			return err
-		}
 		r := map[string]interface{}{
-			"channel_id": chID,
-			"unread":     cnt}
+			"channel_id": c.Id,
+			"unread":     total,
+		}
 		resp = append(resp, r)
 	}
 
