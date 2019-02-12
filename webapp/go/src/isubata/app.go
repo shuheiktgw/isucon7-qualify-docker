@@ -633,6 +633,7 @@ func postProfile(c echo.Context) error {
 		return err
 	}
 
+	fileName := ""
 	avatarName := ""
 	var avatarData []byte
 
@@ -641,11 +642,12 @@ func postProfile(c echo.Context) error {
 	} else if err != nil {
 		return err
 	} else {
-		dotPos := strings.LastIndexByte(fh.Filename, '.')
+		fileName = fh.Filename
+		dotPos := strings.LastIndexByte(fileName, '.')
 		if dotPos < 0 {
 			return ErrBadReqeust
 		}
-		ext := fh.Filename[dotPos:]
+		ext := fileName[dotPos:]
 		switch ext {
 		case ".jpg", ".jpeg", ".png", ".gif":
 			break
@@ -668,7 +670,15 @@ func postProfile(c echo.Context) error {
 	}
 
 	if avatarName != "" && len(avatarData) > 0 {
-		_, err := db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
+		path := dir + avatarName
+		file, err := os.Create(path)
+		if err != nil {
+			return err
+		}
+		defer file.Close()
+		file.Write([]byte(avatarData))
+
+		_, err = db.Exec("INSERT INTO image (name, data) VALUES (?, ?)", avatarName, avatarData)
 		if err != nil {
 			return err
 		}
