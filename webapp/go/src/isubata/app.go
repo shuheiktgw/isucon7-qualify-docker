@@ -28,6 +28,7 @@ import (
 
 const (
 	avatarMaxBytes = 1 * 1024 * 1024
+  	dir = "/home/isucon/isubata/webapp/public/icons/"
 )
 
 var (
@@ -684,10 +685,16 @@ func postProfile(c echo.Context) error {
 }
 
 func getIcon(c echo.Context) error {
+	fileName := c.Param("file_name")
+	path := dir + fileName
+	if _, err := os.Stat(path); os.IsExist(err) {
+		return c.File(path)
+	}
+
 	var name string
 	var data []byte
 	err := db.QueryRow("SELECT name, data FROM image WHERE name = ?",
-		c.Param("file_name")).Scan(&name, &data)
+		fileName).Scan(&name, &data)
 	if err == sql.ErrNoRows {
 		return echo.ErrNotFound
 	}
