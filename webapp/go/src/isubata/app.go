@@ -210,6 +210,10 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM channel WHERE id > 10")
 	db.MustExec("DELETE FROM message WHERE id > 10000")
 	db.MustExec("DELETE FROM haveread")
+
+	// Set up image
+	initIcon()
+
 	return c.String(204, "")
 }
 
@@ -714,6 +718,42 @@ func getIcon(c echo.Context) error {
 		return echo.ErrNotFound
 	}
 	return c.Blob(http.StatusOK, mime, data)
+}
+
+func initIcon() error {
+	os.RemoveAll(dir)
+
+	type image struct {
+		Name string `db:"name"`
+		Data []byte `db:"data"`
+	}
+	imgs := []image{}
+
+	err := db.Select(&imgs, "select name, data from image")
+	if err != nil {
+		return err
+	}
+
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		os.Mkdir(dir, 0777)
+	}
+
+	for _, img := range imgs {
+		path := dir + img.Name
+		file, err := os.Create(path)
+		if err != nil {
+			return err
+		}
+
+		if _, err := file.Write(img.Data); err != nil {
+			file.Close()
+			return err
+		}
+
+		file.Close()
+	}
+
+	return nil
 }
 
 func tAdd(a, b int64) int64 {
