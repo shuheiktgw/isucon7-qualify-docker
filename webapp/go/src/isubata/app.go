@@ -211,6 +211,23 @@ func getInitialize(c echo.Context) error {
 	db.MustExec("DELETE FROM message WHERE id > 10000")
 	db.MustExec("DELETE FROM haveread")
 
+	// Set message_count
+	type row struct {
+		Id int `db:"id"`
+		Count int `db:"count"`
+	}
+
+	var rows []row
+	if err := db.Select(&rows, "select channel_id as id, count(*) as count from message group by channel_id"); err != nil {
+		return err
+	}
+
+	for _, r := range rows {
+		if _, err := db.Exec("UPDATE channel SET message_count = ? WHERE id = ?", r.Count, r.Id); err != nil {
+			return err
+		}
+	}
+
 	// Set up image
 	initIcon()
 
@@ -232,6 +249,7 @@ type ChannelInfo struct {
 	ID          int64     `db:"id"`
 	Name        string    `db:"name"`
 	Description string    `db:"description"`
+	MessageCount int    `db:"message_count"`
 	UpdatedAt   time.Time `db:"updated_at"`
 	CreatedAt   time.Time `db:"created_at"`
 }
