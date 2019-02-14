@@ -531,9 +531,11 @@ func getHistory(c echo.Context) error {
 		return ErrBadReqeust
 	}
 
-	messages := []Message{}
+	messages := []MessageWithUser{}
 	err = db.Select(&messages,
-		"SELECT * FROM message WHERE channel_id = ? ORDER BY id DESC LIMIT ? OFFSET ?",
+		"SELECT message.id, message.content, message.created_at, user.name, user.display_name, user.avatar_icon FROM message " +
+		"INNER JOIN user ON  message.user_id = user.id " +
+		"WHERE message.channel_id = ? ORDER BY message.id DESC LIMIT ? OFFSET ?",
 		chID, N, (page-1)*N)
 	if err != nil {
 		return err
